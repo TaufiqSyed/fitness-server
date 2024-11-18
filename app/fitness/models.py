@@ -74,6 +74,7 @@ class LoggedWorkout(models.Model):
     duration_minutes = models.FloatField()
     log_time = models.DateTimeField()
 
+
 class LoggedExercise(models.Model):
     logged_workout = models.ForeignKey(LoggedWorkout, on_delete=models.CASCADE)
     exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)

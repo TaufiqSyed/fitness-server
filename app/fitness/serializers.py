@@ -104,10 +104,22 @@ class WorkoutProgramSerializer(serializers.ModelSerializer):
         model = WorkoutProgram
         fields = '__all__'
 
+class LoggedExerciseSerializer(serializers.ModelSerializer):
+    exercise_id = serializers.IntegerField(source="exercise.exercise_id", read_only=True)
+    name = serializers.CharField(source="exercise.name", read_only=True)
+
+    class Meta:
+        model = LoggedExercise
+        fields = ['exercise_id', 'name', 'order', 'sets_completed', 'reps_completed', 'weight_used_kg', 'km_ran']
+
+
 class LoggedWorkoutSerializer(serializers.ModelSerializer):
+    exercises = LoggedExerciseSerializer(many=True, source='loggedexercise_set', read_only=True)
+
     class Meta:
         model = LoggedWorkout
-        fields = '__all__'
+        fields = ['id', 'user', 'workout_name', 'duration_minutes', 'log_time', 'exercises']
+        read_only_fields = ['user']
 
 class ActiveWorkoutProgramSerializer(serializers.ModelSerializer):
     workout_program = WorkoutProgramSerializer()

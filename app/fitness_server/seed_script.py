@@ -1,32 +1,31 @@
 import json
-from fitness.models import UserProfile, DietLogItem, Workout, WorkoutExercise, WorkoutProgram, ProgramDay, LoggedWorkout, LoggedExercise, ActiveWorkoutProgram, Exercise
+from fitness.models import (
+    UserProfile, DietLogItem, Workout, WorkoutExercise, WorkoutProgram, ProgramDay,
+    LoggedWorkout, LoggedExercise, ActiveWorkoutProgram, Exercise
+)
 from fitness.serializers import ExerciseSerializer
 from django.utils import timezone
 
-
+# Seed Exercises
 def seed_exercises():
-  print('Seeding exercises...')
-  with open('fitness_server/seed_exercise.json') as f:
-      exercises_data = json.load(f)
+    print('Seeding exercises...')
+    with open('fitness_server/seed_exercise.json') as f:
+        exercises_data = json.load(f)
 
-  for exercise_data in exercises_data:
-      exercise_data['exercise_id'] = exercise_data.pop('id')
-      exercise_data['gif_url'] = exercise_data.pop('gifUrl')
-      exercise_data['body_part'] = exercise_data.pop('bodyPart')
+    for exercise_data in exercises_data:
+        exercise_data['exercise_id'] = exercise_data.pop('id')
+        exercise_data['gif_url'] = exercise_data.pop('gifUrl')
+        exercise_data['body_part'] = exercise_data.pop('bodyPart')
 
-      exercise_data['secondaryMuscles'] = exercise_data.pop('secondaryMuscles', [])
-      exercise_data['instructions'] = exercise_data.pop('instructions', [])
+        exercise_data['secondaryMuscles'] = exercise_data.pop('secondaryMuscles', [])
+        exercise_data['instructions'] = exercise_data.pop('instructions', [])
 
-      serializer = ExerciseSerializer(data=exercise_data)
-      if serializer.is_valid():
-          serializer.save()
-          print(f'Successfully added exercise: {exercise_data["name"]}')
-      else:
-          print(f'Failed to add exercise: {exercise_data["name"]}. Errors: {serializer.errors}')
-
-import json
-from fitness.models import UserProfile, DietLogItem, Workout, WorkoutExercise, WorkoutProgram, ProgramDay, LoggedWorkout, LoggedExercise, ActiveWorkoutProgram, Exercise
-from django.utils import timezone
+        serializer = ExerciseSerializer(data=exercise_data)
+        if serializer.is_valid():
+            serializer.save()
+            print(f'Successfully added exercise: {exercise_data["name"]}')
+        else:
+            print(f'Failed to add exercise: {exercise_data["name"]}. Errors: {serializer.errors}')
 
 # Seed UserProfile
 def seed_user_profiles():
@@ -102,40 +101,35 @@ def seed_diet_log_items():
 
 # Seed Workouts and WorkoutExercises
 def seed_workouts_and_exercises():
-    # Example exercises (assuming these are already in your database)
     exercises = Exercise.objects.all()
 
-    # Create a Full Body Workout with multiple exercises
     workout1 = Workout.objects.create(
         name="Full Body Workout",
         description="A comprehensive workout targeting all major muscle groups."
     )
-    
-    # Create another workout
+
     workout2 = Workout.objects.create(
         name="Cardio Blast",
         description="High-intensity cardio workout for endurance."
     )
 
-    # Linking exercises to workouts using WorkoutExercise
-    # Example: Let's assume we have at least 3 exercises in our Exercise model
-    for i in range(3):  # Link first three exercises to Full Body Workout
+    for i in range(3):
         WorkoutExercise.objects.create(
             workout=workout1,
             exercise=exercises[i],
-            order=i+1,  # Order starting from 1
+            order=i+1,
             sets=3,
             reps=10,
-            weight_in_kg=20  # Example weight
+            weight_in_kg=20
         )
 
-    for i in range(3, 6):  # Link next three exercises to Cardio Blast
+    for i in range(3, 6):
         WorkoutExercise.objects.create(
             workout=workout2,
             exercise=exercises[i],
-            order=i-2,  # Order starting from 1
+            order=i-2,
             sets=2,
-            reps=15  # Higher reps for cardio
+            reps=15
         )
 
     print(f'Successfully added workouts and linked exercises.')
@@ -148,7 +142,6 @@ def seed_workout_programs():
         description="A program designed for beginners to build strength and endurance."
     )
 
-    # Linking workouts to workout program for specific days
     ProgramDay.objects.create(workout_program=workout_program, workout=Workout.objects.get(name="Full Body Workout"), day_of_week=1)
     ProgramDay.objects.create(workout_program=workout_program, workout=Workout.objects.get(name="Cardio Blast"), day_of_week=3)
 
@@ -163,17 +156,18 @@ def seed_logged_workouts():
         log_time=timezone.now()
     )
 
-    # Log exercises for this workout
-    exercises = Exercise.objects.all()  # Assuming exercises are already available
-    for exercise in exercises[:3]:  # Logging first three exercises
+    exercises = Exercise.objects.all()
+    for i, exercise in enumerate(exercises[:3], start=1):
         LoggedExercise.objects.create(
             logged_workout=logged_workout,
             exercise=exercise,
-            order=1,  # Set appropriate order
+            order=i,
             sets_completed=3,
             reps_completed=10,
-            weight_used_kg=20
+            weight_used_kg=20 if exercise.name != "Running" else None,
+            km_ran=2.5 if exercise.name == "Running" else None
         )
+    print(f'Successfully logged workout and exercises for user: {user.email}')
 
 # Seed ActiveWorkoutProgram
 def seed_active_workout_program():

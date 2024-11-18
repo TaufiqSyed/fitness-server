@@ -18,6 +18,7 @@ from django.db.models import Prefetch
 import openai
 from .utils.gpt_food_scanner import GPTFoodScanner
 from .utils.get_current_day import get_current_day
+from django.shortcuts import get_object_or_404
 import os 
 
 class IsOwnerOrReadOnly(permissions.BasePermission):
@@ -103,17 +104,25 @@ class LoggedWorkoutViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
 
     def get_queryset(self):
-        return LoggedWorkout.objects.filter(user=self.request.user)
+        return LoggedWorkout.objects.all()
+        # return LoggedWorkout.objects.filter(user=self.request.user)
+
 
     def perform_create(self, serializer):
         logged_workout = serializer.save(user=self.request.user)
         exercises_data = self.request.data.get('exercises', [])
         for exercise in exercises_data:
+            # Retrieve the Exercise instance
+            exercise_instance = get_object_or_404(Exercise, exercise_id=exercise["exercise_id"])
+            
             LoggedExercise.objects.create(
                 logged_workout=logged_workout,
-                exercise_id=exercise["exercise_id"],
+                exercise=exercise_instance,  # Pass the instance instead of the ID
+                order=exercise['order'],
                 sets_completed=exercise["sets"],
-                reps_completed=exercise["reps"]
+                reps_completed=exercise["reps"],
+                weight_used_kg=exercise.get('weight_in_kg', None),
+                km_ran=exercise.get('km_ran', None),
             )
 
     def retrieve(self, request, *args, **kwargs):
