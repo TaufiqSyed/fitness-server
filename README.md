@@ -19,7 +19,9 @@ Uses the default Django development server.
     ```
 
     Test it out at [http://localhost:8000](http://localhost:8000). The "app" folder is mounted into the container and your code changes apply automatically.
-
+1. ```sh
+   docker exec -it fitness-server-web-1 python3 manage.py shell < fitness_server/seed_script.py
+    ```
 ### Production
 
 Uses gunicorn + nginx.
