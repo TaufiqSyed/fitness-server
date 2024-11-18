@@ -18,5 +18,6 @@ urlpatterns = [
     path('activeworkoutprograms/todays_workout/', ActiveWorkoutProgramViewSet.as_view({'get': 'todays_workout'})),
     path('signup/', UserSignupView.as_view(), name='signup'),
     path('login/', UserLoginView.as_view(), name='login'),
+    path('profile/', UserProfileView.as_view(), name='user-profile'),
     path('logout/', logout_view, name='logout'),
 ]

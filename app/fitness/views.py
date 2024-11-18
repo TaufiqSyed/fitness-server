@@ -33,6 +33,32 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
 #             return Response({'email': user.email}, status=status.HTTP_201_CREATED)
 #         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+class UserProfileView(APIView):
+    permission_classes = [IsAuthenticated]  # Ensure only authenticated users can access this endpoint
+
+    def get(self, request):
+        """Retrieve the authenticated user's profile."""
+        user = request.user  # The currently authenticated user
+        serializer = UserSignupSerializer(user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def put(self, request):
+        """Update the authenticated user's profile."""
+        user = request.user  # The currently authenticated user
+        data = request.data
+
+        # Exclude `email` and `password` from being updated
+        for field in ['email', 'password']:
+            if field in data:
+                data.pop(field)
+
+        serializer = UserSignupSerializer(user, data=data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
 class UserSignupView(APIView):
     def post(self, request):
         serializer = UserSignupSerializer(data=request.data)
