@@ -25,12 +25,29 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         return obj.user == request.user
 
+# class UserSignupView(APIView):
+#     def post(self, request):
+#         serializer = UserSignupSerializer(data=request.data)
+#         if serializer.is_valid():
+#             user = serializer.save()
+#             return Response({'email': user.email}, status=status.HTTP_201_CREATED)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 class UserSignupView(APIView):
     def post(self, request):
         serializer = UserSignupSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
-            return Response({'email': user.email}, status=status.HTTP_201_CREATED)
+            return Response({
+                'email': user.email,
+                'height_cm': user.height_cm,
+                'gender': user.gender,
+                'weight_kg': user.weight_kg,
+                'target_weight_kg': user.target_weight_kg,
+                'age': user.age,
+                'activity_level': user.activity_level,
+                'join_date': user.join_date,
+            }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class UserLoginView(APIView):
@@ -104,9 +121,7 @@ class LoggedWorkoutViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
 
     def get_queryset(self):
-        return LoggedWorkout.objects.all()
-        # return LoggedWorkout.objects.filter(user=self.request.user)
-
+        return LoggedWorkout.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
         logged_workout = serializer.save(user=self.request.user)
