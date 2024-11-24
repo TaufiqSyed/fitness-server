@@ -20,6 +20,7 @@ from .utils.gpt_food_scanner import GPTFoodScanner
 from .utils.get_current_day import get_current_day
 from django.shortcuts import get_object_or_404
 import os 
+from django.db.models import Q
 
 class IsOwnerOrReadOnly(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
@@ -133,6 +134,12 @@ class WorkoutViewSet(viewsets.ReadOnlyModelViewSet):
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
+        
+        # Search functionality
+        query = request.query_params.get('q', None)
+        if query:
+            queryset = queryset.filter(Q(name__icontains=query))
+        
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
@@ -141,6 +148,18 @@ class WorkoutViewSet(viewsets.ReadOnlyModelViewSet):
         serializer = self.get_serializer(instance)
         return Response(serializer.data)  # Exercises are included automatically
 
+    @action(detail=False, methods=['get'])
+    def search(self, request, *args, **kwargs):
+        """
+        Custom search endpoint (optional if list handles it directly)
+        """
+        query = request.query_params.get('q', None)
+        queryset = self.get_queryset()
+        if query:
+            queryset = queryset.filter(Q(name__icontains=query))
+        
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 class LoggedWorkoutViewSet(viewsets.ModelViewSet):
     serializer_class = LoggedWorkoutSerializer

@@ -5,6 +5,7 @@ from .user_manager import UserProfile
 
 class DietLogItem(models.Model):
     user = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
+    food_name = models.TextField()
     image = models.ImageField(upload_to='diet_log_images/', null=True, blank=True)  # Image field for uploads
     food_calories = models.IntegerField()
     protein_grams = models.FloatField()
@@ -46,6 +47,7 @@ class Exercise(models.Model):
 
 class Workout(models.Model):
     name = models.CharField(max_length=100)
+    image_url = models.URLField(max_length=200)
     description = models.TextField()
     exercises = models.ManyToManyField(Exercise, through='WorkoutExercise')
 

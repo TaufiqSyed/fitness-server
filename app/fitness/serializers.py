@@ -26,7 +26,7 @@ class UserLoginSerializer(serializers.Serializer):
 class DietLogItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = DietLogItem
-        fields = ['id', 'image', 'food_calories', 'protein_grams', 'carbs_grams', 'fat_grams', 'log_time']
+        fields = ['id', 'image', 'food_calories', 'food_name', 'protein_grams', 'carbs_grams', 'fat_grams', 'log_time']
         read_only_fields = ['user']  # Mark user as read-only
 
 # class ExerciseSerializer(serializers.ModelSerializer):
