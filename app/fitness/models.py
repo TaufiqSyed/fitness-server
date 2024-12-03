@@ -53,7 +53,7 @@ class Workout(models.Model):
     body_part = models.CharField(max_length=100)
     exercises = models.ManyToManyField(Exercise, through='WorkoutExercise')
 
-class FeaturedWorkout(models.Model)
+class FeaturedWorkout(models.Model):
     workout = models.ForeignKey(Workout, on_delete=models.CASCADE)
     date = models.DateField()
 
