@@ -25,7 +25,7 @@ class Exercise(models.Model):
     exercise_id = models.CharField(max_length=100, unique=True, primary_key=True)
     name = models.CharField(max_length=100)
     target = models.CharField(max_length=100)
-    calories_burned = models.FloatField()
+    calories_burned = models.FloatField(default=200)
     
     # Store list data as semicolon-separated strings
     secondary_muscles = models.TextField()

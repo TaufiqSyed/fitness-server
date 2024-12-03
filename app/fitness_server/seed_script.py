@@ -1,7 +1,7 @@
 import json
 from fitness.models import (
     UserProfile, DietLogItem, Workout, WorkoutExercise, WorkoutProgram, ProgramDay,
-    LoggedWorkout, LoggedExercise, ActiveWorkoutProgram, Exercise
+    LoggedWorkout, LoggedExercise, ActiveWorkoutProgram, Exercise, FeaturedWorkout
 )
 from fitness.serializers import ExerciseSerializer
 from django.utils import timezone
@@ -19,6 +19,7 @@ def seed_exercises():
 
         exercise_data['secondaryMuscles'] = exercise_data.pop('secondaryMuscles', [])
         exercise_data['instructions'] = exercise_data.pop('instructions', [])
+        exercise_data['calories_burned'] = 200
 
         serializer = ExerciseSerializer(data=exercise_data)
         if serializer.is_valid():

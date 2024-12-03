@@ -45,7 +45,7 @@ class ExerciseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Exercise
-        fields = ['body_part', 'equipment', 'gif_url', 'exercise_id', 'name', 'target', 'secondaryMuscles', 'instructions']
+        fields = ['body_part', 'equipment', 'gif_url', 'exercise_id', 'name', 'target', 'secondaryMuscles', 'instructions', 'calories_burned']
         
     def create(self, validated_data):
         # Process list fields to semicolon-separated strings
