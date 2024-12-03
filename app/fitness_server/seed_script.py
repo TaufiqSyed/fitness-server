@@ -182,6 +182,60 @@ def seed_active_workout_program():
         is_active=True
     )
 
+# Seed FeaturedWorkouts
+def seed_featured_workouts():
+    print('Seeding featured workouts...')
+    workout = Workout.objects.first()
+    if not workout:
+        print("No workouts available to feature. Skipping FeaturedWorkout seeding.")
+        return
+
+    featured_workouts = [
+        {"workout": workout, "date": timezone.now().date()},
+        {"workout": workout, "date": (timezone.now() + timezone.timedelta(days=1)).date()},
+    ]
+
+    for fw in featured_workouts:
+        FeaturedWorkout.objects.create(workout=fw["workout"], date=fw["date"])
+        print(f"Successfully added featured workout for date: {fw['date']}")
+
+# Seed DietLogItem
+def seed_diet_log_items():
+    print('Seeding diet log items...')
+    diet_log_items = [
+        {
+            "user": UserProfile.objects.get(email="user1@example.com"),
+            "food_name": "Grilled Chicken Salad",
+            "food_calories": 400,
+            "protein_grams": 35,
+            "carbs_grams": 20,
+            "fat_grams": 15,
+            "log_time": timezone.now()
+        },
+        {
+            "user": UserProfile.objects.get(email="user2@example.com"),
+            "food_name": "Avocado Toast",
+            "food_calories": 300,
+            "protein_grams": 10,
+            "carbs_grams": 40,
+            "fat_grams": 15,
+            "log_time": timezone.now()
+        },
+    ]
+
+    for item in diet_log_items:
+        log_item = DietLogItem(
+            user=item["user"],
+            food_name=item["food_name"],
+            food_calories=item["food_calories"],
+            protein_grams=item["protein_grams"],
+            carbs_grams=item["carbs_grams"],
+            fat_grams=item["fat_grams"],
+            log_time=item["log_time"]
+        )
+        log_item.save()
+        print(f"Successfully added diet log item for user: {log_item.user.email}")
+
 # Main function to run all seeds
 def run_seeds():
     seed_exercises()
@@ -191,5 +245,8 @@ def run_seeds():
     seed_workout_programs()
     seed_logged_workouts()
     seed_active_workout_program()
+
+    seed_diet_log_items()
+    seed_featured_workouts()
 
 run_seeds()
