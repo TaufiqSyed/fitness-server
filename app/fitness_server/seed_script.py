@@ -28,7 +28,45 @@ def seed_exercises():
         else:
             print(f'Failed to add exercise: {exercise_data["name"]}. Errors: {serializer.errors}')
 
-# Seed UserProfile
+# # Seed UserProfile
+# def seed_user_profiles():
+#     user_profiles = [
+#         {
+#             "email": "user1@example.com",
+#             "height_cm": 175,
+#             "weight_kg": 70,
+#             "target_weight_kg": 65,
+#             "age": 30,
+#             "activity_level": "Moderately active",
+#             "gender": "Male",
+#             "password": "securepassword1"
+#         },
+#         {
+#             "email": "user2@example.com",
+#             "height_cm": 160,
+#             "weight_kg": 60,
+#             "target_weight_kg": 55,
+#             "age": 25,
+#             "activity_level": "Lightly active",
+#             "gender": "Female",
+#             "password": "securepassword2"
+#         },
+#     ]
+
+#     for profile in user_profiles:
+#         user = UserProfile(
+#             email=profile["email"],
+#             height_cm=profile["height_cm"],
+#             weight_kg=profile["weight_kg"],
+#             target_weight_kg=profile["target_weight_kg"],
+#             age=profile["age"],
+#             activity_level=profile["activity_level"],
+#             gender=profile["gender"]
+#         )
+#         user.set_password(profile["password"])
+#         user.save()
+#         print(f'Successfully added user profile: {user.email}')
+
 def seed_user_profiles():
     user_profiles = [
         {
@@ -54,8 +92,9 @@ def seed_user_profiles():
     ]
 
     for profile in user_profiles:
-        user = UserProfile(
+        user = UserProfile.objects.create_user(
             email=profile["email"],
+            password=profile["password"],
             height_cm=profile["height_cm"],
             weight_kg=profile["weight_kg"],
             target_weight_kg=profile["target_weight_kg"],
@@ -63,8 +102,6 @@ def seed_user_profiles():
             activity_level=profile["activity_level"],
             gender=profile["gender"]
         )
-        user.set_password(profile["password"])
-        user.save()
         print(f'Successfully added user profile: {user.email}')
 
 # Seed DietLogItem

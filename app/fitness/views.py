@@ -3,7 +3,7 @@ from rest_framework import permissions, viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.utils import timezone
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from .models import *
 from .serializers import *
 from rest_framework.views import APIView
@@ -173,17 +173,17 @@ class WorkoutViewSet(viewsets.ReadOnlyModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'], url_path='featured-workout')
-    def featured_workout(self, request, *args, **kwargs):
+    @action(detail=False, methods=['get'], url_path='featured-workouts')
+    def featured_workouts(self, request, *args, **kwargs):
         """
         Custom action to fetch the featured workout for today.
         """
         today = date.today()
         try:
             # Filter FeaturedWorkout for today and get the first one
-            featured = FeaturedWorkout.objects.filter(date=today).first()
+            featured = FeaturedWorkout.objects.filter(date=today)
             if not featured:
-                return Response({"detail": "No featured workout for today."}, status=404)
+                return Response({"detail": "No featured workouts for today."}, status=404)
 
             # Serialize the associated workout
             serializer = self.get_serializer(featured.workout)
