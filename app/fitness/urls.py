@@ -10,6 +10,8 @@ router.register(r'workouts', WorkoutViewSet, basename='workout')
 router.register(r'workoutprograms', WorkoutProgramViewSet, basename='workoutprogram')
 router.register(r'loggedworkouts', LoggedWorkoutViewSet, basename='loggedworkout')
 router.register(r'activeworkoutprograms', ActiveWorkoutProgramViewSet, basename='activeworkoutprogram')
+router.register(r'stats', StatsViewSet, basename='stats')
+
 
 urlpatterns = [
     path('', include(router.urls)),

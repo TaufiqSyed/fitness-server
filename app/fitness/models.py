@@ -25,6 +25,7 @@ class Exercise(models.Model):
     exercise_id = models.CharField(max_length=100, unique=True, primary_key=True)
     name = models.CharField(max_length=100)
     target = models.CharField(max_length=100)
+    calories_burned = models.FloatField()
     
     # Store list data as semicolon-separated strings
     secondary_muscles = models.TextField()
@@ -49,7 +50,12 @@ class Workout(models.Model):
     name = models.CharField(max_length=100)
     image_url = models.URLField(max_length=200)
     description = models.TextField()
+    body_part = models.CharField(max_length=100)
     exercises = models.ManyToManyField(Exercise, through='WorkoutExercise')
+
+class FeaturedWorkout(models.Model)
+    workout = models.ForeignKey(Workout, on_delete=models.CASCADE)
+    date = models.DateField()
 
 class WorkoutExercise(models.Model):
     workout = models.ForeignKey(Workout, on_delete=models.CASCADE)

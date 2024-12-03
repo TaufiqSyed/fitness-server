@@ -161,6 +161,36 @@ class WorkoutViewSet(viewsets.ReadOnlyModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
+    @action(detail=False, methods=['get'], url_path='body_part/(?P<body_part>[^/.]+)')
+    def filter_by_body_part(self, request, body_part=None):
+        """
+        Custom action to filter workouts by body part.
+        """
+        queryset = self.get_queryset().filter(
+            workoutexercise_set__exercise__body_part__iexact=body_part
+        ).distinct()
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], url_path='featured-workout')
+    def featured_workout(self, request, *args, **kwargs):
+        """
+        Custom action to fetch the featured workout for today.
+        """
+        today = date.today()
+        try:
+            # Filter FeaturedWorkout for today and get the first one
+            featured = FeaturedWorkout.objects.filter(date=today).first()
+            if not featured:
+                return Response({"detail": "No featured workout for today."}, status=404)
+
+            # Serialize the associated workout
+            serializer = self.get_serializer(featured.workout)
+            return Response(serializer.data)
+        except Exception as e:
+            return Response({"detail": str(e)}, status=500)
+
 class LoggedWorkoutViewSet(viewsets.ModelViewSet):
     serializer_class = LoggedWorkoutSerializer
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
@@ -279,13 +309,39 @@ class WorkoutProgramViewSet(viewsets.ReadOnlyModelViewSet):
     
 #     return Response({'message': 'Rest day'})
 
+
 class ActiveWorkoutProgramViewSet(viewsets.ModelViewSet):
     queryset = ActiveWorkoutProgram.objects.all()
     serializer_class = WorkoutProgramSerializer
 
     @action(detail=True, methods=['post'])
     def activate(self, request, pk=None):
+        """
+        Activate a workout program. Ensures only one active program at a time per user.
+        """
         program = self.get_object()
+
+        # Check if this program is already subscribed to
+        existing_subscription = ActiveWorkoutProgram.objects.filter(
+            workout_program=program, user=request.user
+        ).first()
+        if existing_subscription:
+            return Response(
+                {'error': 'You are already subscribed to this workout program.'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        # Check if the user has any active workout program
+        active_program = ActiveWorkoutProgram.objects.filter(
+            user=request.user, is_active=True
+        ).first()
+        if active_program:
+            return Response(
+                {'error': 'You already have an active workout program. Deactivate it first to activate another.'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        # Activate the new program
         start_date = request.data.get('start_date')
         end_date = request.data.get('end_date')
         ActiveWorkoutProgram.objects.create(
@@ -295,10 +351,13 @@ class ActiveWorkoutProgramViewSet(viewsets.ModelViewSet):
             end_date=end_date,
             is_active=True
         )
-        return Response({'status': 'workout program activated'})
+        return Response({'status': 'Workout program activated'})
 
     @action(detail=True, methods=['post'])
     def deactivate(self, request, pk=None):
+        """
+        Deactivate a workout program.
+        """
         active_program = ActiveWorkoutProgram.objects.filter(
             workout_program_id=pk,
             user=request.user,
@@ -307,13 +366,15 @@ class ActiveWorkoutProgramViewSet(viewsets.ModelViewSet):
         if active_program:
             active_program.is_active = False
             active_program.save()
-            return Response({'status': 'workout program deactivated'})
+            return Response({'status': 'Workout program deactivated'})
         else:
             return Response({'error': 'No active workout program found'}, status=status.HTTP_400_BAD_REQUEST)
 
-
     @action(detail=False, methods=['get'])
     def todays_workout(self, request):
+        """
+        Get today's workout from the active program.
+        """
         active_program = ActiveWorkoutProgram.objects.filter(user=request.user, is_active=True).order_by('-start_date').first()
         if active_program:
             today = datetime.now().weekday()
@@ -323,3 +384,80 @@ class ActiveWorkoutProgramViewSet(viewsets.ModelViewSet):
                 return Response(workout_serializer.data)
             return Response({'message': 'Rest day'})
         return Response({'message': 'No active workout program found'}, status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=False, methods=['get'], url_path='current-program')
+    def current_program(self, request):
+        """
+        Get the currently active workout program.
+        """
+        active_program = ActiveWorkoutProgram.objects.filter(user=request.user, is_active=True).first()
+        if active_program:
+            serializer = self.get_serializer(active_program.workout_program)
+            return Response(serializer.data)
+        return Response({'message': 'No active workout program found'}, status=status.HTTP_404_NOT_FOUND)
+
+class StatsViewSet(viewsets.ViewSet):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @action(detail=False, methods=['get'])
+    def calories_burned(self, request):
+        """
+        Total calories burned today by the authenticated user.
+        """
+        user = request.user.userprofile
+        today = datetime.now().date()
+
+        # Sum up calories from logged exercises for today
+        exercises_today = LoggedExercise.objects.filter(
+            logged_workout__user=user,
+            logged_workout__log_time__date=today
+        ).select_related('exercise')
+
+        total_calories_burned = sum(
+            ex.sets_completed * ex.reps_completed * ex.exercise.calories_burned
+            for ex in exercises_today
+        )
+        return Response({'calories_burned_today': total_calories_burned})
+
+    @action(detail=False, methods=['get'])
+    def calories_eaten(self, request):
+        """
+        Total calories eaten today by the authenticated user.
+        """
+        user = request.user.userprofile
+        today = datetime.now().date()
+
+        # Sum up calories from diet log items for today
+        calories_eaten = DietLogItem.objects.filter(
+            user=user,
+            log_time__date=today
+        ).aggregate(total_calories=Sum('food_calories'))['total_calories'] or 0
+
+        return Response({'calories_eaten_today': calories_eaten})
+
+    @action(detail=False, methods=['get'])
+    def number_exercises(self, request):
+        """
+        Total number of exercises done by the authenticated user.
+        """
+        user = request.user.userprofile
+        exercise_count = LoggedExercise.objects.filter(
+            logged_workout__user=user
+        ).count()
+        return Response({'number_of_exercises': exercise_count})
+
+    @action(detail=False, methods=['get'])
+    def number_logged_exercises_per_day(self, request):
+        """
+        Number of logged exercises per day for the last 30 days.
+        """
+        user = request.user.userprofile
+        last_30_days = datetime.now() - timedelta(days=30)
+
+        exercise_logs = LoggedExercise.objects.filter(
+            logged_workout__user=user,
+            logged_workout__log_time__gte=last_30_days
+        ).values('logged_workout__log_time__date').annotate(count=Count('id'))
+
+        data = {log['logged_workout__log_time__date']: log['count'] for log in exercise_logs}
+        return Response({'number_logged_exercises_per_day': data})
