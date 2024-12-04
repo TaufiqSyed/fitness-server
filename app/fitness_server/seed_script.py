@@ -240,8 +240,29 @@ def seed_workout_programs():
         description="A program designed for beginners to build strength and endurance."
     )
 
+    ProgramDay.objects.create(workout_program=workout_program, workout=Workout.objects.get(name="Full Body Workout"), day_of_week=0)
     ProgramDay.objects.create(workout_program=workout_program, workout=Workout.objects.get(name="Full Body Workout"), day_of_week=1)
+    ProgramDay.objects.create(workout_program=workout_program, workout=Workout.objects.get(name="Full Body Workout"), day_of_week=2)
+    ProgramDay.objects.create(workout_program=workout_program, workout=Workout.objects.get(name="Full Body Workout"), day_of_week=3)
+    ProgramDay.objects.create(workout_program=workout_program, workout=Workout.objects.get(name="Full Body Workout"), day_of_week=4)
+    ProgramDay.objects.create(workout_program=workout_program, workout=Workout.objects.get(name="Full Body Workout"), day_of_week=5)
+    ProgramDay.objects.create(workout_program=workout_program, workout=Workout.objects.get(name="Full Body Workout"), day_of_week=6)
+
+    workout_program = WorkoutProgram.objects.create(
+        user=UserProfile.objects.get(email="user1@example.com"),
+        name="Full Body Program",
+        description="A program designed for beginners to build strength and endurance."
+    )
+
+    ProgramDay.objects.create(workout_program=workout_program, workout=Workout.objects.get(name="Cardio Blast"), day_of_week=0)
+    ProgramDay.objects.create(workout_program=workout_program, workout=Workout.objects.get(name="Cardio Blast"), day_of_week=1)
+    ProgramDay.objects.create(workout_program=workout_program, workout=Workout.objects.get(name="Cardio Blast"), day_of_week=2)
     ProgramDay.objects.create(workout_program=workout_program, workout=Workout.objects.get(name="Cardio Blast"), day_of_week=3)
+    ProgramDay.objects.create(workout_program=workout_program, workout=Workout.objects.get(name="Cardio Blast"), day_of_week=4)
+    ProgramDay.objects.create(workout_program=workout_program, workout=Workout.objects.get(name="Cardio Blast"), day_of_week=5)
+    ProgramDay.objects.create(workout_program=workout_program, workout=Workout.objects.get(name="Cardio Blast"), day_of_week=6)
+
+
 
 # Seed LoggedWorkout and LoggedExercise
 def seed_logged_workouts():

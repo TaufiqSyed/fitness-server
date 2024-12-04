@@ -2,6 +2,9 @@
 from rest_framework import permissions, viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
+from datetime import datetime, timedelta
+from django.db.models import Sum
+
 from django.utils import timezone
 from datetime import date, datetime, timedelta
 from .models import *
@@ -140,6 +143,11 @@ class WorkoutViewSet(viewsets.ReadOnlyModelViewSet):
         if query:
             queryset = queryset.filter(Q(name__icontains=query))
         
+        # Filter by body_part
+        body_part = request.query_params.get('body_part', None)
+        if body_part:
+            queryset = queryset.filter(workoutexercise__exercise__body_part__icontains=body_part)
+        
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
@@ -148,30 +156,30 @@ class WorkoutViewSet(viewsets.ReadOnlyModelViewSet):
         serializer = self.get_serializer(instance)
         return Response(serializer.data)  # Exercises are included automatically
 
-    @action(detail=False, methods=['get'])
-    def search(self, request, *args, **kwargs):
-        """
-        Custom search endpoint (optional if list handles it directly)
-        """
-        query = request.query_params.get('q', None)
-        queryset = self.get_queryset()
-        if query:
-            queryset = queryset.filter(Q(name__icontains=query))
+    # @action(detail=False, methods=['get'])
+    # def search(self, request, *args, **kwargs):
+    #     """
+    #     Custom search endpoint (optional if list handles it directly)
+    #     """
+    #     query = request.query_params.get('q', None)
+    #     queryset = self.get_queryset()
+    #     if query:
+    #         queryset = queryset.filter(Q(name__icontains=query))
         
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+    #     serializer = self.get_serializer(queryset, many=True)
+    #     return Response(serializer.data)
 
-    @action(detail=False, methods=['get'], url_path='body_part/(?P<body_part>[^/.]+)')
-    def filter_by_body_part(self, request, body_part=None):
-        """
-        Custom action to filter workouts by body part.
-        """
-        queryset = self.get_queryset().filter(
-            workoutexercise_set__exercise__body_part__iexact=body_part
-        ).distinct()
+    # @action(detail=False, methods=['get'], url_path='body_part/(?P<body_part>[^/.]+)')
+    # def filter_by_body_part(self, request, body_part=None):
+    #     """
+    #     Custom action to filter workouts by body part.
+    #     """
+    #     queryset = self.get_queryset().filter(
+    #         workoutexercise_set__exercise__body_part__iexact=body_part
+    #     ).distinct()
 
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+    #     serializer = self.get_serializer(queryset, many=True)
+    #     return Response(serializer.data)
 
     @action(detail=False, methods=['get'], url_path='featured-workouts')
     def featured_workouts(self, request, *args, **kwargs):
@@ -249,33 +257,33 @@ class WorkoutProgramViewSet(viewsets.ReadOnlyModelViewSet):
         user = self.request.user
         return queryset
 
-    @action(detail=True, methods=['post'])
-    def activate(self, request, pk=None):
-        program = self.get_object()
-        start_date = request.data.get('start_date') 
-        end_date = request.data.get('end_date')
-        ActiveWorkoutProgram.objects.create(
-            workout_program=program,
-            user=request.user,
-            start_date=start_date,
-            end_date=end_date,
-            is_active=True
-        )
-        return Response({'status': 'workout program activated'})
+    # @action(detail=True, methods=['post'])
+    # def activate(self, request, pk=None):
+    #     program = self.get_object()
+    #     start_date = request.data.get('start_date') 
+    #     end_date = request.data.get('end_date')
+    #     ActiveWorkoutProgram.objects.create(
+    #         workout_program=program,
+    #         user=request.user,
+    #         start_date=start_date,
+    #         end_date=end_date,
+    #         is_active=True
+    #     )
+    #     return Response({'status': 'workout program activated'})
 
-    @action(detail=True, methods=['post'])
-    def deactivate(self, request, pk=None):
-        active_program = ActiveWorkoutProgram.objects.filter(
-            workout_program_id=pk,
-            user=request.user,
-            is_active=True
-        ).first()
-        if active_program:
-            active_program.is_active = False
-            active_program.save()
-            return Response({'status': 'workout program deactivated'})
-        else:
-            return Response({'error': 'No active workout program found'}, status=status.HTTP_400_BAD_REQUEST)
+    # @action(detail=True, methods=['post'])
+    # def deactivate(self, request, pk=None):
+    #     active_program = ActiveWorkoutProgram.objects.filter(
+    #         workout_program_id=pk,
+    #         user=request.user,
+    #         is_active=True
+    #     ).first()
+    #     if active_program:
+    #         active_program.is_active = False
+    #         active_program.save()
+    #         return Response({'status': 'workout program deactivated'})
+    #     else:
+    #         return Response({'error': 'No active workout program found'}, status=status.HTTP_400_BAD_REQUEST)
 
 # @action(detail=False, methods=['get'])
 # def todays_workout(self, request):
@@ -347,7 +355,7 @@ class ActiveWorkoutProgramViewSet(viewsets.ModelViewSet):
         ActiveWorkoutProgram.objects.create(
             workout_program=program,
             user=request.user,
-            start_date=start_date,
+        start_date=start_date,  
             end_date=end_date,
             is_active=True
         )
@@ -434,6 +442,35 @@ class StatsViewSet(viewsets.ViewSet):
         ).aggregate(total_calories=Sum('food_calories'))['total_calories'] or 0
 
         return Response({'calories_eaten_today': calories_eaten})
+
+    @action(detail=False, methods=['get'])
+    def calories_eaten_per_day(self, request):
+        """
+        Number of calories eaten for the past week on each weekday, starting Monday onward.
+        """
+        user = request.user
+        today = datetime.now().date()
+        start_of_week = today - timedelta(days=today.weekday())  # Get the last Monday
+
+        # Initialize a dictionary to store calories for each day of the week
+        calories_per_day = {start_of_week + timedelta(days=i): 0 for i in range(7)}
+
+        # Get the calories eaten for the past week
+        diet_logs = DietLogItem.objects.filter(
+            user=user,
+            log_time__date__gte=start_of_week,
+            log_time__date__lte=today
+        ).values('log_time__date').annotate(total_calories=Sum('food_calories'))
+
+        # Update the dictionary with the actual calories eaten
+        for log in diet_logs:
+            log_date = log['log_time__date']
+            calories_per_day[log_date] = log['total_calories']
+
+        # Convert the dictionary to a list of calories starting from Monday
+        calories_list = [calories_per_day[start_of_week + timedelta(days=i)] for i in range(7)]
+
+        return Response({'calories_eaten_per_day': calories_list})
 
     @action(detail=False, methods=['get'])
     def number_exercises(self, request):
