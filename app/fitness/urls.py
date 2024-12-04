@@ -18,6 +18,7 @@ urlpatterns = [
     path('activeworkoutprograms/<int:pk>/activate/', ActiveWorkoutProgramViewSet.as_view({'post': 'activate'})),
     path('activeworkoutprograms/<int:pk>/deactivate/', ActiveWorkoutProgramViewSet.as_view({'post': 'deactivate'})),
     path('activeworkoutprograms/todays_workout/', ActiveWorkoutProgramViewSet.as_view({'get': 'todays_workout'})),
+    path('activeworkoutprograms/current-program/', ActiveWorkoutProgramViewSet.as_view({'get': 'current-program'})),
     path('signup/', UserSignupView.as_view(), name='signup'),
     path('login/', UserLoginView.as_view(), name='login'),
     path('profile/', UserProfileView.as_view(), name='user-profile'),
