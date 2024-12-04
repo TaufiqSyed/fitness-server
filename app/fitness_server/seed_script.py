@@ -100,40 +100,100 @@ def seed_diet_log_items():
         log_item.save()
         print(f'Successfully added diet log item for user: {log_item.user.email}')
 
-# Seed Workouts and WorkoutExercises
+# Seed Workouts and WorkoutExercises with image_url and body_part
 def seed_workouts_and_exercises():
     exercises = Exercise.objects.all()
 
-    workout1 = Workout.objects.create(
-        name="Full Body Workout",
-        description="A comprehensive workout targeting all major muscle groups."
-    )
+    # Define workouts with image_url and body_part
+    workouts_data = [
+        {
+            "name": "Full Body Workout",
+            "description": "A comprehensive workout targeting all major muscle groups.",
+            "image_url": "https://images.pexels.com/photos/209969/pexels-photo-209969.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
+            "body_part": "arms",
+        },
+        {
+            "name": "Cardio Blast",
+            "description": "High-intensity cardio workout for endurance.",
+            "image_url": "https://images.pexels.com/photos/2827392/pexels-photo-2827392.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
+            "body_part": "legs",
+        },
+        {
+            "name": "Strength Training",
+            "description": "Focused strength-building exercises for upper and lower body.",
+            "image_url": "https://images.pexels.com/photos/6298288/pexels-photo-6298288.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
+            "body_part": "shoulders",
+        },
+        {
+            "name": "Flexibility and Balance",
+            "description": "A mix of yoga and balance exercises to improve flexibility.",
+            "image_url": "https://images.pexels.com/photos/1552106/pexels-photo-1552106.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
+            "body_part": "abs",
+        },
+    ]
 
-    workout2 = Workout.objects.create(
-        name="Cardio Blast",
-        description="High-intensity cardio workout for endurance."
-    )
+    # Create workouts
+    for workout_data in workouts_data:
+        workout, created = Workout.objects.get_or_create(
+            name=workout_data["name"],
+            defaults={
+                "description": workout_data["description"],
+                "image_url": workout_data["image_url"],
+                "body_part": workout_data["body_part"],
+            }
+        )
+        if created:
+            print(f"Successfully added workout: {workout.name}")
+        else:
+            print(f"Workout already exists: {workout.name}")
 
-    for i in range(3):
+    # Link exercises to the workouts
+    workout1 = Workout.objects.get(name="Full Body Workout")
+    workout2 = Workout.objects.get(name="Cardio Blast")
+    workout3 = Workout.objects.get(name="Strength Training")
+    workout4 = Workout.objects.get(name="Flexibility and Balance")
+
+    for i in range(15):
         WorkoutExercise.objects.create(
             workout=workout1,
             exercise=exercises[i],
-            order=i+1,
+            order=i + 1,
             sets=3,
             reps=10,
             weight_in_kg=20
         )
 
-    for i in range(3, 6):
+    for i in range(20, 40):
         WorkoutExercise.objects.create(
             workout=workout2,
             exercise=exercises[i],
-            order=i-2,
+            order=i - 2,
             sets=2,
             reps=15
         )
+    
+    for i in range(5, 25):
+        WorkoutExercise.objects.create(
+            workout=workout3,
+            exercise=exercises[i],
+            order=i - 4,
+            sets=4,
+            reps=8,
+            weight_in_kg=25
+        )
+    
+    for i in range(30, 50):
+        WorkoutExercise.objects.create(
+            workout=workout4,
+            exercise=exercises[i],
+            order=i - 6,
+            sets=3,
+            reps=12
+        )
+    
 
-    print(f'Successfully added workouts and linked exercises.')
+    print(f"Successfully added workouts and linked exercises.")
+
 
 # Seed WorkoutProgram and ProgramDay
 def seed_workout_programs():
