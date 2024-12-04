@@ -304,37 +304,55 @@ class WorkoutProgramViewSet(viewsets.ReadOnlyModelViewSet):
             return Response({'status': 'workout program deactivated'})
         else:
             return Response({'error': 'No active workout program found'}, status=status.HTTP_400_BAD_REQUEST)
-# @action(detail=False, methods=['get'])
-# def todays_workout(self, request):
-#     active_program = ActiveWorkoutProgram.objects.filter(user=request.user, is_active=True).order_by('-start_date').first()
-    
-#     if active_program is None:
-#         return Response({'error': 'No active workout program found'}, status=status.HTTP_404_NOT_FOUND)
-    
-#     program_days = ProgramDay.objects.filter(workout_program=active_program.workout_program)
-#     day = get_current_day()  # Assuming this function returns an integer (0-6)
-#     todays_day = program_days.filter(day_of_week=day).first()  # Call the function here
 
-#     if todays_day and todays_day.workout:
-#         exercises = WorkoutExercise.objects.filter(workout=todays_day.workout).order_by('order')
-#         response_data = {
-#             'workout_name': todays_day.workout.name,
-#             'description': todays_day.workout.description,
-#             'exercises': [
-#                 {
-#                     'exercise_id': ex.exercise.id,
-#                     'name': ex.exercise.name,
-#                     'sets': ex.sets,
-#                     'reps': ex.reps,
-#                     'weight_in_kg': ex.weight_in_kg,
-#                     'km_ran': ex.km_ran
-#                 }
-#                 for ex in exercises
-#             ]
-#         }
-#         return Response(response_data)
+    @action(detail=False, methods=['get'])
+    def current_program(self, request):
+        """
+        Retrieve the latest active workout program for the authenticated user.
+        """
+        active_program = ActiveWorkoutProgram.objects.filter(user=request.user, is_active=True).order_by('-start_date').first()
+        
+        if active_program is None:
+            return Response({'error': 'No active workout program found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = WorkoutProgramSerializer(active_program.workout_program)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def todays_workout(self, request):
+        active_program = ActiveWorkoutProgram.objects.filter(user=request.user, is_active=True).order_by('-start_date').first()
+        
+        if active_program is None:
+            return Response({'error': 'No active workout program found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        program_days = ProgramDay.objects.filter(workout_program=active_program.workout_program)
+        day = get_current_day()  # Assuming this function returns an integer (0-6)
+        todays_day = program_days.filter(day_of_week=day).first()  # Call the function here
+
+        if todays_day and todays_day.workout:
+            exercises = WorkoutExercise.objects.filter(workout=todays_day.workout).select_related('exercise').order_by('order')
+            response_data = {
+                'workout_name': todays_day.workout.name,
+                'description': todays_day.workout.description,
+                'exercises': [
+                    {
+                        'exercise_id': ex.exercise.exercise_id,
+                        'name': ex.exercise.name,
+                        'sets': ex.sets,
+                        'reps': ex.reps,
+                        'weight_in_kg': ex.weight_in_kg,
+                        'km_ran': ex.km_ran
+                    }
+                    for ex in exercises
+                ]
+            }
+            return Response(response_data)
+        
+        return Response({'message': 'Rest day'})
+
     
-#     return Response({'message': 'Rest day'})
+
+
 
 
 # class ActiveWorkoutProgramViewSet(viewsets.ModelViewSet):
