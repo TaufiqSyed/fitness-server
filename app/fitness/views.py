@@ -145,9 +145,11 @@ class WorkoutViewSet(viewsets.ReadOnlyModelViewSet):
         
         # Filter by body_part
         body_part = request.query_params.get('body_part', None)
+        # if body_part:
+        #     queryset = queryset.filter(workoutexercise__exercise__body_part__icontains=body_part)
         if body_part:
-            queryset = queryset.filter(workoutexercise__exercise__body_part__icontains=body_part)
-        
+            queryset = queryset.filter(body_part__icontains=body_part)
+
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
@@ -257,34 +259,51 @@ class WorkoutProgramViewSet(viewsets.ReadOnlyModelViewSet):
         user = self.request.user
         return queryset
 
-    # @action(detail=True, methods=['post'])
-    # def activate(self, request, pk=None):
-    #     program = self.get_object()
-    #     start_date = request.data.get('start_date') 
-    #     end_date = request.data.get('end_date')
-    #     ActiveWorkoutProgram.objects.create(
-    #         workout_program=program,
-    #         user=request.user,
-    #         start_date=start_date,
-    #         end_date=end_date,
-    #         is_active=True
-    #     )
-    #     return Response({'status': 'workout program activated'})
+    @action(detail=True, methods=['post'])
+    def activate(self, request, pk=None):
+        """
+        Activate a workout program for the authenticated user.
+        """
+        program = self.get_object()
 
-    # @action(detail=True, methods=['post'])
-    # def deactivate(self, request, pk=None):
-    #     active_program = ActiveWorkoutProgram.objects.filter(
-    #         workout_program_id=pk,
-    #         user=request.user,
-    #         is_active=True
-    #     ).first()
-    #     if active_program:
-    #         active_program.is_active = False
-    #         active_program.save()
-    #         return Response({'status': 'workout program deactivated'})
-    #     else:
-    #         return Response({'error': 'No active workout program found'}, status=status.HTTP_400_BAD_REQUEST)
+        # Check if the user has any active workout program
+        active_program = ActiveWorkoutProgram.objects.filter(
+            user=request.user, is_active=True
+        ).first()
+        if active_program:
+            return Response(
+                {'error': 'You already have an active workout program. Deactivate it first to activate another.'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
 
+        # Activate the new program
+        start_date = request.data.get('start_date')
+        end_date = request.data.get('end_date')
+        ActiveWorkoutProgram.objects.create(
+            workout_program=program,
+            user=request.user,
+            start_date=start_date,
+            end_date=end_date,
+            is_active=True
+        )
+        return Response({'status': 'workout program activated'})
+
+    @action(detail=True, methods=['post'])
+    def deactivate(self, request, pk=None):
+        """
+        Deactivate the active workout program for the authenticated user.
+        """
+        active_program = ActiveWorkoutProgram.objects.filter(
+            workout_program_id=pk,
+            user=request.user,
+            is_active=True
+        ).first()
+        if active_program:
+            active_program.is_active = False
+            active_program.save()
+            return Response({'status': 'workout program deactivated'})
+        else:
+            return Response({'error': 'No active workout program found'}, status=status.HTTP_400_BAD_REQUEST)
 # @action(detail=False, methods=['get'])
 # def todays_workout(self, request):
 #     active_program = ActiveWorkoutProgram.objects.filter(user=request.user, is_active=True).order_by('-start_date').first()
@@ -318,91 +337,66 @@ class WorkoutProgramViewSet(viewsets.ReadOnlyModelViewSet):
 #     return Response({'message': 'Rest day'})
 
 
-class ActiveWorkoutProgramViewSet(viewsets.ModelViewSet):
-    queryset = ActiveWorkoutProgram.objects.all()
-    serializer_class = WorkoutProgramSerializer
+# class ActiveWorkoutProgramViewSet(viewsets.ModelViewSet):
+#     queryset = ActiveWorkoutProgram.objects.all()
+#     serializer_class = WorkoutProgramSerializer
 
-    @action(detail=True, methods=['post'])
-    def activate(self, request, pk=None):
-        """
-        Activate a workout program. Ensures only one active program at a time per user.
-        """
-        program = self.get_object()
+#     @action(detail=True, methods=['post'])
+#     def activate(self, request, pk=None):
+#         """
+#         Activate a workout program. Ensures only one active program at a time per user.
+#         """
+#         program = self.get_object()
 
-        # Check if this program is already subscribed to
-        existing_subscription = ActiveWorkoutProgram.objects.filter(
-            workout_program=program, user=request.user
-        ).first()
-        if existing_subscription:
-            return Response(
-                {'error': 'You are already subscribed to this workout program.'},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
+#         # Check if this program is already subscribed to
+#         existing_subscription = ActiveWorkoutProgram.objects.filter(
+#             workout_program=program, user=request.user
+#         ).first()
+#         if existing_subscription:
+#             return Response(
+#                 {'error': 'You are already subscribed to this workout program.'},
+#                 status=status.HTTP_401_UNAUTHORIZED
+#             )
 
-        # Check if the user has any active workout program
-        active_program = ActiveWorkoutProgram.objects.filter(
-            user=request.user, is_active=True
-        ).first()
-        if active_program:
-            return Response(
-                {'error': 'You already have an active workout program. Deactivate it first to activate another.'},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
+#         # Check if the user has any active workout program
+#         active_program = ActiveWorkoutProgram.objects.filter(
+#             user=request.user, is_active=True
+#         ).first()
+#         if active_program:
+#             return Response(
+#                 {'error': 'You already have an active workout program. Deactivate it first to activate another.'},
+#                 status=status.HTTP_401_UNAUTHORIZED
+#             )
 
-        # Activate the new program
-        start_date = request.data.get('start_date')
-        end_date = request.data.get('end_date')
-        ActiveWorkoutProgram.objects.create(
-            workout_program=program,
-            user=request.user,
-        start_date=start_date,  
-            end_date=end_date,
-            is_active=True
-        )
-        return Response({'status': 'Workout program activated'})
+#         # Activate the new program
+#         start_date = request.data.get('start_date')
+#         end_date = request.data.get('end_date')
+#         ActiveWorkoutProgram.objects.create(
+#             workout_program=program,
+#             user=request.user,
+#         start_date=start_date,  
+#             end_date=end_date,
+#             is_active=True
+#         )
+#         return Response({'status': 'Workout program activated'})
 
-    @action(detail=True, methods=['post'])
-    def deactivate(self, request, pk=None):
-        """
-        Deactivate a workout program.
-        """
-        active_program = ActiveWorkoutProgram.objects.filter(
-            workout_program_id=pk,
-            user=request.user,
-            is_active=True
-        ).first()
-        if active_program:
-            active_program.is_active = False
-            active_program.save()
-            return Response({'status': 'Workout program deactivated'})
-        else:
-            return Response({'error': 'No active workout program found'}, status=status.HTTP_400_BAD_REQUEST)
+#     @action(detail=True, methods=['post'])
+#     def deactivate(self, request, pk=None):
+#         """
+#         Deactivate a workout program.
+#         """
+#         active_program = ActiveWorkoutProgram.objects.filter(
+#             workout_program_id=pk,
+#             user=request.user,
+#             is_active=True
+#         ).first()
+#         if active_program:
+#             active_program.is_active = False
+#             active_program.save()
+#             return Response({'status': 'Workout program deactivated'})
+#         else:
+#             return Response({'error': 'No active workout program found'}, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=False, methods=['get'])
-    def todays_workout(self, request):
-        """
-        Get today's workout from the active program.
-        """
-        active_program = ActiveWorkoutProgram.objects.filter(user=request.user, is_active=True).order_by('-start_date').first()
-        if active_program:
-            today = datetime.now().weekday()
-            todays_day = ProgramDay.objects.filter(workout_program=active_program.workout_program, day_of_week=today).first()
-            if todays_day and todays_day.workout:
-                workout_serializer = WorkoutSerializer(todays_day.workout)
-                return Response(workout_serializer.data)
-            return Response({'message': 'Rest day'})
-        return Response({'message': 'No active workout program found'}, status=status.HTTP_404_NOT_FOUND)
-
-    @action(detail=False, methods=['get'], url_path='current-program')
-    def current_program(self, request):
-        """
-        Get the currently active workout program.
-        """
-        active_program = ActiveWorkoutProgram.objects.filter(user=request.user, is_active=True).first()
-        if active_program:
-            serializer = self.get_serializer(active_program.workout_program)
-            return Response(serializer.data)
-        return Response({'message': 'No active workout program found'}, status=status.HTTP_404_NOT_FOUND)
 
 class StatsViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
