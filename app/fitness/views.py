@@ -404,7 +404,7 @@ class StatsViewSet(viewsets.ViewSet):
         """
         Total calories burned today by the authenticated user.
         """
-        user = request.user.userprofile
+        user = request.user
         today = datetime.now().date()
 
         # Sum up calories from logged exercises for today
